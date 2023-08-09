@@ -29,7 +29,7 @@ class Api
             $body = (string)$response->getBody();
 
             $this->predisClient->set($redisKey, $body);
-            $this->predisClient->expireat($redisKey, strtotime('+1 hour'));
+            $this->predisClient->expireat($redisKey, strtotime('+30 minutes'));
         }
 
         $data = json_decode($body, true);
@@ -42,8 +42,8 @@ class Api
         $diffHelltide = $now->diff($nextHelltide);
 
         $frames = [
-            'world_boss' => $diffWorldBoss->format('%H:%I:%S'),
-            'helltide' => $diffHelltide->format('%H:%I:%S'),
+            'world_boss' => $diffWorldBoss,
+            'helltide' => $diffHelltide,
         ];
 
         return $this->mapData($frames);
@@ -54,9 +54,30 @@ class Api
         $frameCollection = new FrameCollection();
 
         foreach ($data as $key => $value) {
-            $frame = new Frame();
-            $frame->setText($value);
-            $frame->setIcon($key === 'world_boss' ? 'i34284' : 'i7627');
+            if ($key === 'helltide' && $value->invert === 1) {
+                $value->invert = 0;
+
+                $now = new \DateTime();
+                $endHelltime = new \DateTime('+1 hour');
+                $endHelltime->sub($value);
+
+                $diff = $now->diff($endHelltime);
+
+                $frame = new Frame();
+                $frame->setText('ON AIR');
+                $frame->setIcon('i7627');
+
+                $frameCollection->addFrame($frame);
+
+                $frame = new Frame();
+                $frame->setText($diff->format('%H:%I:%S'));
+                $frame->setIcon('i7627');
+
+            } else {
+                $frame = new Frame();
+                $frame->setText($value->format('%H:%I:%S'));
+                $frame->setIcon($key === 'world_boss' ? 'i34284' : 'i7627');
+            }
 
             $frameCollection->addFrame($frame);
         }
