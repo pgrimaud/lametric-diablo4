@@ -1,4 +1,4 @@
-# LaMetric App Starter
+# LaMetric Diablo 4
 
 This starter allow you to create LaMetric apps easily. (Indicator App)
 
