@@ -8,11 +8,6 @@ use LaMetric\Response\{Frame, FrameCollection};
 
 class Response
 {
-    /**
-     * @param string $value
-     *
-     * @return string
-     */
     public function printError(string $value = 'INTERNAL ERROR'): string
     {
         return $this->asJson([
@@ -26,21 +21,11 @@ class Response
         ]);
     }
 
-    /**
-     * @param array $data
-     *
-     * @return string
-     */
     private function asJson(array $data = []): string
     {
         return (string) json_encode($data);
     }
 
-    /**
-     * @param FrameCollection $frameCollection
-     *
-     * @return string
-     */
     public function printData(FrameCollection $frameCollection): string
     {
         $response = [

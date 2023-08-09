@@ -4,54 +4,62 @@ declare(strict_types=1);
 
 namespace LaMetric;
 
-use GuzzleHttp\Client;
 use LaMetric\Response\{Frame, FrameCollection};
+use GuzzleHttp\Client as GuzzleClient;
+use Predis\Client as PredisClient;
 
 class Api
 {
-    public function __construct(private Client $client, private array $credentials = [])
-    {
+    public function __construct(
+        private GuzzleClient $guzzleClient,
+        private PredisClient $predisClient
+    ) {
     }
 
-    /**
-     * @param array $parameters
-     *
-     * @return FrameCollection
-     */
-    public function fetchData(array $parameters = []): FrameCollection
+    public function fetchData(): FrameCollection
     {
-        /**
-         * You can call whatever API you want and extract data as array or object
-         *
-         * object $this->client (Guzzle HTTP) is available to make curl requests
-         * array $this->credentials contains sensitive data
-         * array $parameters (credentials) can contain sensitive data
-         *
-         * Here for example, we will return IP of user
-         */
+        $redisKey = 'lametric:diablo4';
 
-        return $this->mapData([
-            'ip' => $_SERVER['REMOTE_HOST'] ?? 'UNKNOWN',
-        ]);
+        $body = $this->predisClient->get($redisKey);
+        $ttl = $this->predisClient->ttl($redisKey);
+
+        if (!$body || $ttl < 0) {
+            $response = $this->guzzleClient->get('https://helltides.com/api/schedule');
+
+            $body = (string)$response->getBody();
+
+            $this->predisClient->set($redisKey, $body);
+            $this->predisClient->expireat($redisKey, strtotime('+1 hour'));
+        }
+
+        $data = json_decode($body, true);
+
+        $now = new \DateTime();
+        $nextWorldBoss = new \DateTime($data['world_boss'][0]['startTime']);
+        $diffWorldBoss = $now->diff($nextWorldBoss);
+
+        $nextHelltide = new \DateTime($data['helltide'][0]['startTime']);
+        $diffHelltide = $now->diff($nextHelltide);
+
+        $frames = [
+            'world_boss' => $diffWorldBoss->format('%H:%I:%S'),
+            'helltide' => $diffHelltide->format('%H:%I:%S'),
+        ];
+
+        return $this->mapData($frames);
     }
 
-    /**
-     * @param array $data
-     *
-     * @return FrameCollection
-     */
     private function mapData(array $data = []): FrameCollection
     {
         $frameCollection = new FrameCollection();
 
-        /**
-         * Transform data as FrameCollection and Frame
-         */
-        $frame = new Frame();
-        $frame->setText($data['ip']);
-        $frame->setIcon('');
+        foreach ($data as $key => $value) {
+            $frame = new Frame();
+            $frame->setText($value);
+            $frame->setIcon($key === 'world_boss' ? 'i34284' : 'i7627');
 
-        $frameCollection->addFrame($frame);
+            $frameCollection->addFrame($frame);
+        }
 
         return $frameCollection;
     }

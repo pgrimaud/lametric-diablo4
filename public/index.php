@@ -1,8 +1,9 @@
 <?php
 
-use LaMetric\{Api, Response, Validator};
+use LaMetric\{Api, Response};
 
-use GuzzleHttp\Client;
+use GuzzleHttp\Client as GuzzleClient;
+use Predis\Client as PredisClient;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -11,14 +12,8 @@ header('Content-Type: application/json');
 $response = new Response();
 
 try {
-    $credentials = is_file(__DIR__ . '/../config/credentials.php') ? include_once __DIR__ . '/../config/credentials.php' : [];
-    $parameters  = include_once __DIR__ . '/../config/fields.php';
-
-    $validator = new Validator($_GET);
-    $validator->check($parameters);
-
-    $api    = new Api(new Client(), $credentials);
-    $frames = $api->fetchData($validator->getData());
+    $api = new Api(new GuzzleClient(), new PredisClient());
+    $frames = $api->fetchData();
 
     echo $response->printData($frames);
 } catch (Exception $exception) {
