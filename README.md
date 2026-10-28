@@ -1,5 +1,8 @@
 # LaMetric Diablo 4
 
+> [!CAUTION]
+> READ-ONLY : APP MIGRATED TO https://github.com/pgrimaud/lumiere
+
 Display timers for World Boss & Helltide
 
 ![image](https://github.com/pgrimaud/lametric-diablo4/assets/1866496/d7ac9612-4d9e-4e74-85ff-b6f7eb01bb26)
